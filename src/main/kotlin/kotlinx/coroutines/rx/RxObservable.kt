@@ -1,12 +1,14 @@
 package kotlinx.coroutines.rx
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.rx.internal.RxScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx.internal.RxCoroutineScope
+import kotlinx.coroutines.suspendCancellableCoroutine
 import rx.Emitter
 import rx.Observable
 import kotlin.coroutines.CoroutineContext
@@ -37,9 +39,18 @@ suspend fun <T> Observable<T>.awaitSingle(): T = suspendCancellableCoroutine { c
     cont.invokeOnCancellation { subscription.unsubscribe() }
 }
 
+suspend fun <T> Observable<T>.awaitComplete(): Unit = suspendCancellableCoroutine { cont ->
+    val subscription = subscribe(
+        { /* ignore */ },
+        { cont.resumeWithException(exception = it) },
+        { cont.resume(Unit) }
+    )
+    cont.invokeOnCancellation { subscription.unsubscribe() }
+}
+
 fun <T> Observable<T>.asFlow(): Flow<T> = callbackFlow {
     val subscription = subscribe(
-        { trySendBlocking(it) },
+        { trySend(it) },
         { close(cause = it) },
         { close(cause = null) }
     )
@@ -50,28 +61,30 @@ fun <T> Flow<T>.asObservable(
     context: CoroutineContext,
     backpressureMode: Emitter.BackpressureMode
 ): Observable<T> {
-    val job = Job(context[Job])
-    return Observable.create<T>(
+    return Observable.create(
         { emitter ->
-            RxScope.launch(context + job) {
-                coroutineContext.job.invokeOnCompletion {
-                    if (it == null) {
-                        emitter.onCompleted()
-                    } else {
-                        emitter.onError(it)
+            val job = RxCoroutineScope.launch(context, CoroutineStart.LAZY) {
+                runCatching { collect { emitter.onNext(it) } }
+                    .onSuccess { emitter.onCompleted() }
+                    .onFailure {
+                        when (it) {
+                            is CancellationException -> {} /* ignore */
+                            else -> emitter.onError(it)
+                        }
                     }
-                }
-                collect { emitter.onNext(it) }
             }
+
+            emitter.setCancellation { job.cancel() }
+            job.start()
         },
         backpressureMode
-    ).doOnUnsubscribe { job.cancel() }
+    )
 }
 
 fun <T> rxObservable(
     context: CoroutineContext,
     backpressureMode: Emitter.BackpressureMode,
-    block: ProducerScope<T>.() -> Unit
+    block: suspend ProducerScope<T>.() -> Unit
 ): Observable<T> {
     return callbackFlow { block() }
         .asObservable(context, backpressureMode)

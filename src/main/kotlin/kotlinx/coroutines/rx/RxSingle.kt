@@ -1,15 +1,23 @@
 package kotlinx.coroutines.rx
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.rx.internal.RxScope
+import kotlinx.coroutines.rx.internal.RxCoroutineScope
 import rx.Single
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-suspend fun <T> Single<T>.await(): T = suspendCancellableCoroutine { cont ->
+suspend fun <T> Single<T>.awaitSingle(): T = suspendCancellableCoroutine { cont ->
     val subscription = subscribe(
         { cont.resume(it) },
+        { cont.resumeWithException(it) }
+    )
+    cont.invokeOnCancellation { subscription.unsubscribe() }
+}
+
+suspend fun <T> Single<T>.awaitComplete(): Unit = suspendCancellableCoroutine { cont ->
+    val subscription = subscribe(
+        { cont.resume(Unit) },
         { cont.resumeWithException(it) }
     )
     cont.invokeOnCancellation { subscription.unsubscribe() }
@@ -19,12 +27,18 @@ fun <T> rxSingle(
     context: CoroutineContext,
     block: suspend CoroutineScope.() -> T
 ): Single<T> {
-    val job = Job(context[Job])
-    return Single.create<T> { subscriber ->
-        RxScope.launch(context + job) {
+    return Single.fromEmitter { emitter ->
+        val job = RxCoroutineScope.launch(context, CoroutineStart.LAZY) {
             runCatching { block() }
-                .onSuccess { subscriber.onSuccess(it) }
-                .onFailure { subscriber.onError(it) }
+                .onSuccess { emitter.onSuccess(it) }
+                .onFailure {
+                    when (it) {
+                        is CancellationException -> {} /* ignore */
+                        else -> emitter.onError(it)
+                    }
+                }
         }
-    }.doOnUnsubscribe { job.cancel() }
+        emitter.setCancellation { job.cancel() }
+        job.start()
+    }
 }

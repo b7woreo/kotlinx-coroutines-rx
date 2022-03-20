@@ -1,13 +1,13 @@
 package kotlinx.coroutines.rx
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.rx.internal.RxScope
+import kotlinx.coroutines.rx.internal.RxCoroutineScope
 import rx.Completable
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-suspend fun Completable.await(): Unit = suspendCancellableCoroutine { cont ->
+suspend fun Completable.awaitComplete(): Unit = suspendCancellableCoroutine { cont ->
     val subscription = subscribe(
         { cont.resume(Unit) },
         { cont.resumeWithException(it) }
@@ -19,12 +19,18 @@ fun rxCompletable(
     context: CoroutineContext,
     block: suspend CoroutineScope.() -> Unit
 ): Completable {
-    val job = Job(context[Job])
-    return Completable.create { subscriber ->
-        RxScope.launch(context + job) {
+    return Completable.fromEmitter { emitter ->
+        val job = RxCoroutineScope.launch(context, CoroutineStart.LAZY) {
             runCatching { block() }
-                .onSuccess { subscriber.onCompleted() }
-                .onFailure { subscriber.onError(it) }
+                .onSuccess { emitter.onCompleted() }
+                .onFailure {
+                    when (it) {
+                        is CancellationException -> {} /* ignore */
+                        else -> emitter.onError(it)
+                    }
+                }
         }
-    }.doOnUnsubscribe { job.cancel() }
+        emitter.setCancellation { job.cancel() }
+        job.start()
+    }
 }
