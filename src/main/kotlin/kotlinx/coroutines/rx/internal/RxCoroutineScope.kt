@@ -5,6 +5,5 @@ import kotlinx.coroutines.Dispatchers
 import kotlin.coroutines.CoroutineContext
 
 internal object RxCoroutineScope: CoroutineScope {
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Unconfined
+    override val coroutineContext: CoroutineContext = Dispatchers.Unconfined
 }
