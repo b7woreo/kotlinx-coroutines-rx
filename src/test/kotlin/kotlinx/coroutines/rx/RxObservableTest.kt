@@ -130,7 +130,7 @@ class RxObservableTest {
 
     @Test(expected = RuntimeException::class)
     fun testObservableAwaitCompleteFailure() = runBlocking<Unit> {
-        Observable.error<Int>(RuntimeException()).awaitSingle()
+        Observable.error<Int>(RuntimeException()).awaitComplete()
     }
 
     @Test
