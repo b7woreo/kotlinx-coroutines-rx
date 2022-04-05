@@ -3,7 +3,7 @@ kotlin = "org.jetbrains.kotlin.jvm:1.6.20"
 binary-compatibility-validator = "org.jetbrains.kotlinx.binary-compatibility-validator:0.8.0"
 
 [libraries]
-kotlin-coroutines = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0"
+kotlinx-coroutines = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 rxjava = "io.reactivex:rxjava:1.3.8"
 junit = "junit:junit:4.13.2"
 mockk = "io.mockk:mockk:1.12.3"

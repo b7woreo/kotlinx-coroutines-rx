@@ -12,7 +12,7 @@ jacocoTestReport {
 }
 
 dependencies {
-    implementation libs.kotlin.coroutines
+    implementation libs.kotlinx.coroutines
     implementation libs.rxjava
 
     testImplementation libs.junit
