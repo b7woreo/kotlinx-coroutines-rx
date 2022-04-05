@@ -1,0 +1,25 @@
+public final class kotlinx/coroutines/rx/RxCompletableKt {
+	public static final fun awaitComplete (Lrx/Completable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun rxCompletable (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;)Lrx/Completable;
+}
+
+public final class kotlinx/coroutines/rx/RxObservableKt {
+	public static final fun asFlow (Lrx/Observable;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun asObservable (Lkotlinx/coroutines/flow/Flow;Lkotlin/coroutines/CoroutineContext;Lrx/Emitter$BackpressureMode;)Lrx/Observable;
+	public static final fun awaitComplete (Lrx/Observable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun awaitFirst (Lrx/Observable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun awaitLast (Lrx/Observable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun awaitSingle (Lrx/Observable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun rxObservable (Lkotlin/coroutines/CoroutineContext;Lrx/Emitter$BackpressureMode;Lkotlin/jvm/functions/Function2;)Lrx/Observable;
+}
+
+public final class kotlinx/coroutines/rx/RxScheduleKt {
+	public static final fun asCoroutineDispatcher (Lrx/Scheduler;)Lkotlinx/coroutines/CoroutineDispatcher;
+}
+
+public final class kotlinx/coroutines/rx/RxSingleKt {
+	public static final fun awaitComplete (Lrx/Single;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun awaitSingle (Lrx/Single;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun rxSingle (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;)Lrx/Single;
+}
+
