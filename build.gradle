@@ -1,5 +1,13 @@
 plugins {
     alias(libs.plugins.kotlin)
+    id('jacoco')
+}
+
+test {
+    finalizedBy jacocoTestReport
+}
+jacocoTestReport {
+    dependsOn test
 }
 
 dependencies {
